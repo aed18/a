@@ -1,1 +1,148 @@
-aaaaaaaa
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <queue>
+#include <fstream>
+#include <sstream>
+
+// Estructura para almacenar un punto geodimensional con ID
+struct Point {
+    long long id;
+    double latitude;
+    double longitude;
+
+    Point(long long id, double lat, double lon) : id(id), latitude(lat), longitude(lon) {}
+};
+
+// Función para calcular la distancia de Haversine entre dos puntos
+double haversine(const Point& p1, const Point& p2) {
+    const double R = 6371.0; // Radio de la Tierra en kilómetros
+    double lat1 = p1.latitude * M_PI / 180.0;
+    double lon1 = p1.longitude * M_PI / 180.0;
+    double lat2 = p2.latitude * M_PI / 180.0;
+    double lon2 = p2.longitude * M_PI / 180.0;
+
+    double dlat = lat2 - lat1;
+    double dlon = lon2 - lon1;
+
+    double a = std::sin(dlat/2) * std::sin(dlat/2) +
+               std::cos(lat1) * std::cos(lat2) *
+               std::sin(dlon/2) * std::sin(dlon/2);
+    double c = 2 * std::atan2(std::sqrt(a), std::sqrt(1-a));
+    return R * c;
+}
+
+// Clase para el VP-Tree
+class VPTree {
+private:
+    struct Node {
+        Point point;
+        double threshold;
+        Node* left;
+        Node* right;
+
+        Node(const Point& pt) : point(pt), threshold(0), left(nullptr), right(nullptr) {}
+    };
+
+    Node* root;
+
+    Node* buildTree(std::vector<Point>& points, int start, int end) {
+        if (start >= end) return nullptr;
+
+        int idx = start + (end - start) / 2;
+        std::nth_element(points.begin() + start, points.begin() + idx, points.begin() + end,
+                         [&](const Point& a, const Point& b) {
+                             return haversine(points[start], a) < haversine(points[start], b);
+                         });
+
+        Node* node = new Node(points[idx]);
+        node->threshold = haversine(points[start], points[idx]);
+        node->left = buildTree(points, start, idx);
+        node->right = buildTree(points, idx + 1, end);
+
+        return node;
+    }
+
+    void search(Node* node, const Point& target, double range, std::priority_queue<std::pair<double, Point>>& result) const {
+        if (!node) return;
+
+        double dist = haversine(node->point, target);
+        if (dist < range) {
+            result.push({dist, node->point});
+        }
+
+        if (node->left && dist - range <= node->threshold) {
+            search(node->left, target, range, result);
+        }
+        if (node->right && dist + range >= node->threshold) {
+            search(node->right, target, range, result);
+        }
+    }
+
+public:
+    VPTree(const std::vector<Point>& points) {
+        std::vector<Point> pts = points;
+        root = buildTree(pts, 0, pts.size());
+    }
+
+    std::vector<Point> search(const Point& target, double range) const {
+        std::priority_queue<std::pair<double, Point>> result;
+        search(root, target, range, result);
+
+        std::vector<Point> output;
+        while (!result.empty()) {
+            output.push_back(result.top().second);
+            result.pop();
+        }
+        return output;
+    }
+};
+
+// Función para leer el archivo CSV y cargar los puntos
+std::vector<Point> loadPointsFromCSV(const std::string& filename) {
+    std::vector<Point> points;
+    std::ifstream file(filename);
+    std::string line, token;
+
+    if (file.is_open()) {
+        std::getline(file, line); // Saltar la primera línea (encabezados)
+        while (std::getline(file, line)) {
+            std::stringstream ss(line);
+            std::vector<std::string> tokens;
+
+            while (std::getline(ss, token, ',')) {
+                tokens.push_back(token);
+            }
+
+            if (tokens.size() == 3) {
+                long long id = std::stoll(tokens[0]);
+                double latitude = std::stod(tokens[1]);
+                double longitude = std::stod(tokens[2]);
+                points.emplace_back(id, latitude, longitude);
+            }
+        }
+        file.close();
+    }
+
+    return points;
+}
+
+int main() {
+    std::string filename = "nodes.csv";
+    std::vector<Point> points = loadPointsFromCSV(filename);
+
+    VPTree tree(points);
+
+    Point target(0, 37.7749, -122.4194); // Ejemplo: San Francisco (ID arbitrario)
+    double range = 2000; // km
+
+    std::vector<Point> result = tree.search(target, range);
+
+    std::cout << "Points within " << range << " km of San Francisco:\n";
+    for (const auto& point : result) {
+        std::cout << "ID: " << point.id << ", Latitude: " << point.latitude << ", Longitude: " << point.longitude << "\n";
+    }
+
+    return 0;
+}
