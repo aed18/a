@@ -3,43 +3,43 @@
 #include <vector>
 
 void ThreadingSum(int* pv, int sizev, unsigned long* sums, int sizes) {
-    // Número de hilos
-    int numThreads = 20;
+    
+    int numeroHilos = 20;
 
-    // Función lambda para sumar segmentos del arreglo
-    auto sumFunction = [pv, sums](int start, int end) {
-        for (int i = start; i < end; ++i) {
-            int lastDigit = pv[i] % 10;
-            if (lastDigit == 0 || lastDigit == 9) {
+    
+    auto funcionSuma = [pv, sums](int inicio, int fin) {
+        for (int i = inicio; i < fin; ++i) {
+            int ultimoDigito = pv[i] % 10;
+            if (ultimoDigito == 0 || ultimoDigito == 9) {
                 sums[0] += pv[i];
-            } else if (lastDigit == 1 || lastDigit == 8) {
+            } else if (ultimoDigito == 1 || ultimoDigito == 8) {
                 sums[1] += pv[i];
-            } else if (lastDigit == 2 || lastDigit == 7) {
+            } else if (ultimoDigito == 2 || ultimoDigito == 7) {
                 sums[2] += pv[i];
-            } else if (lastDigit == 3 || lastDigit == 6) {
+            } else if (ultimoDigito == 3 || ultimoDigito == 6) {
                 sums[3] += pv[i];
-            } else if (lastDigit == 4 || lastDigit == 5) {
+            } else if (ultimoDigito == 4 || ultimoDigito == 5) {
                 sums[4] += pv[i];
             }
         }
     };
 
-    // Crear un vector para almacenar los threads
-    std::vector<std::thread> threads;
+    
+    std::vector<std::thread> hilos;
 
-    // Tamaño de cada segmento que un thread debería procesar
-    int segmentSize = sizev / numThreads;
+    
+    int tamanoSegmento = sizev / numeroHilos;
 
-    // Crear y asignar trabajo a cada thread
-    for (int i = 0; i < numThreads; ++i) {
-        int start = i * segmentSize;
-        int end = (i == numThreads - 1) ? sizev : start + segmentSize;
-        threads.emplace_back(sumFunction, start, end);
+    
+    for (int i = 0; i < numeroHilos; ++i) {
+        int inicio = i * tamanoSegmento;
+        int fin = (i == numeroHilos - 1) ? sizev : inicio + tamanoSegmento;
+        hilos.emplace_back(funcionSuma, inicio, fin);
     }
 
-    // Esperar a que todos los threads terminen
-    for (std::thread &t : threads) {
-        t.join();
+    
+    for (std::thread &h : hilos) {
+        h.join();
     }
 }
 
@@ -51,4 +51,3 @@ int main() {
         std::cout << "Suma de elementos que terminan en " << i*2 << " o " << (i*2 + 1) % 10 << ": " << sums[i] << std::endl;
     }
 }
-
