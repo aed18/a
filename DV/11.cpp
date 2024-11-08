@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-
+#include <queue>
 using namespace std;
 
 // Función para combinar dos arrays ordenados
@@ -48,21 +48,50 @@ vector<int> mergeKArrays(const vector<vector<int>>& arrays, int start, int end) 
     return mergeArrays(left, right);
 }
 
-int main() {
-    // Ejemplo de uso
-    vector<vector<int>> arrays = {
-        {1, 3, 5, 7},
-        {2, 4, 6, 8},
-        {0, 9, 10, 11}
-    };
+struct Element {
+    int value;
+    int arrayIndex;
+    int elementIndex;
+    bool operator>(const Element& other) const {
+        return value > other.value;
+    }
+};
 
+vector<int> mergeKArrays(const vector<vector<int>>& arrays) {
     int k = arrays.size();
+    priority_queue<Element, vector<Element>, greater<Element>> minHeap;
+    vector<int> result;
 
-    // Combinar los k arrays
-    vector<int> result = mergeKArrays(arrays, 0, k - 1);
+    // Inserta el primer elemento de cada array en el min-heap
+    for (int i = 0; i < k; i++) {
+        if (!arrays[i].empty()) {
+            minHeap.push({arrays[i][0], i, 0});
+        }
+    }
 
-    // Imprimir el resultado combinado
-    cout << "Array combinado: ";
+    // Extrae el mínimo y agrega el siguiente elemento del mismo array al min-heap
+    while (!minHeap.empty()) {
+        Element minElement = minHeap.top();
+        minHeap.pop();
+        result.push_back(minElement.value);
+
+        // Inserta el siguiente elemento del mismo array si existe
+        if (minElement.elementIndex + 1 < arrays[minElement.arrayIndex].size()) {
+            minHeap.push({arrays[minElement.arrayIndex][minElement.elementIndex + 1], 
+                          minElement.arrayIndex, 
+                          minElement.elementIndex + 1});
+        }
+    }
+
+    return result;
+}
+
+int main() {
+    // Ejemplo de entrada
+    vector<vector<int>> arrays = {{1, 5, 9}, {2, 6, 8}, {3, 7, 10}};
+    vector<int> result = mergeKArrays(arrays);
+
+    // Imprime el array combinado
     for (int num : result) {
         cout << num << " ";
     }
@@ -70,3 +99,5 @@ int main() {
 
     return 0;
 }
+
+
