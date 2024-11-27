@@ -1,54 +1,68 @@
 #include <iostream>
 #include <vector>
-
 using namespace std;
 
-const int N = 5; // Tamaño del laberinto
-int dx[] = {0, 1, 0, -1}; // Movimientos: derecha, abajo, izquierda, arriba
-int dy[] = {1, 0, -1, 0};
+struct Posicion {
+    int fila, columna;
+};
 
-bool solveMaze(vector<vector<bool>>& maze, int x, int y, vector<vector<int>>& solution) {
-    if (x == N - 1 && y == N - 1) { // Llegamos a la salida
-        solution[x][y] = 1;
+// Movimientos posibles: arriba, abajo, izquierda, derecha
+vector<Posicion> movimientos = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+bool resolverLaberinto(vector<vector<bool>>& laberinto, vector<vector<bool>>& visitado, 
+                       vector<Posicion>& camino, Posicion actual, Posicion salida) {
+    int n = laberinto.size();
+    int m = laberinto[0].size();
+    
+    // Verificar si hemos llegado a la salida
+    if (actual.fila == salida.fila && actual.columna == salida.columna) {
+        camino.push_back(actual);
         return true;
     }
-
-    if (x >= 0 && x < N && y >= 0 && y < N && maze[x][y] && solution[x][y] == 0) {
-        solution[x][y] = 1; // Marcar como parte del camino
-
-        for (int i = 0; i < 4; ++i) { // Intentar las 4 direcciones
-            if (solveMaze(maze, x + dx[i], y + dy[i], solution)) {
+    
+    // Marcar como visitado
+    visitado[actual.fila][actual.columna] = true;
+    camino.push_back(actual);
+    
+    // Probar cada movimiento posible
+    for (auto mov : movimientos) {
+        Posicion nueva = {actual.fila + mov.fila, actual.columna + mov.columna};
+        if (nueva.fila >= 0 && nueva.fila < n && nueva.columna >= 0 && nueva.columna < m &&
+            laberinto[nueva.fila][nueva.columna] && !visitado[nueva.fila][nueva.columna]) {
+            if (resolverLaberinto(laberinto, visitado, camino, nueva, salida)) {
                 return true;
             }
         }
-
-        solution[x][y] = 0; // Retroceder
     }
+    
+    // Retroceder
+    camino.pop_back();
     return false;
 }
 
 int main() {
-    vector<vector<bool>> maze = {
-        {true, true, true, true, true},
-        {false, true, true, true, false},
-        {true, true, false, false, false},
-        {true, true, true, true, true},
-        {true, true, true, false, true}
+    vector<vector<bool>> laberinto = {
+        {true, false, true, true, false},
+        {true, true, true, false, true},
+        {false, false, true, true, true},
+        {true, true, false, false, true},
+        {true, false, true, true, true}
     };
-
-    vector<vector<int>> solution(N, vector<int>(N, 0));
-
-    if (solveMaze(maze, 0, 0, solution)) {
-        cout << "Camino encontrado:\n";
-        for (const auto& row : solution) {
-            for (int cell : row) {
-                cout << (cell ? "1 " : "0 ");
-            }
-            cout << endl;
+    
+    Posicion inicio = {0, 0};
+    Posicion salida = {4, 4};
+    vector<vector<bool>> visitado(5, vector<bool>(5, false));
+    vector<Posicion> camino;
+    
+    if (resolverLaberinto(laberinto, visitado, camino, inicio, salida)) {
+        cout << "Camino encontrado:" << endl;
+        for (auto p : camino) {
+            cout << "(" << p.fila << ", " << p.columna << ") -> ";
         }
+        cout << "Salida" << endl;
     } else {
-        cout << "No hay camino posible.\n";
+        cout << "No se encontró un camino." << endl;
     }
-
+    
     return 0;
 }
