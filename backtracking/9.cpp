@@ -3,49 +3,49 @@
 #include <stack>
 using namespace std;
 
-void topologicalSortDFS(int node, vector<vector<int>>& graph, vector<bool>& visited, stack<int>& Stack) {
-    visited[node] = true;
-
-    for (int neighbor : graph[node]) {
-        if (!visited[neighbor]) {
-            topologicalSortDFS(neighbor, graph, visited, Stack);
+void dfsTopologico(int nodo, vector<vector<int>>& grafo, vector<bool>& visitado, stack<int>& orden) {
+    visitado[nodo] = true;
+    for (int vecino : grafo[nodo]) {
+        if (!visitado[vecino]) {
+            dfsTopologico(vecino, grafo, visitado, orden);
         }
     }
-
-    Stack.push(node);
+    orden.push(nodo);
 }
 
-vector<int> topologicalSort(vector<vector<int>>& graph) {
-    int n = graph.size();
-    vector<bool> visited(n, false);
-    stack<int> Stack;
+vector<int> ordenTopologico(vector<vector<int>>& grafo, int n) {
+    vector<bool> visitado(n, false);
+    stack<int> orden;
 
-    for (int i = 0; i < n; i++) {
-        if (!visited[i]) {
-            topologicalSortDFS(i, graph, visited, Stack);
+    for (int i = 0; i < n; ++i) {
+        if (!visitado[i]) {
+            dfsTopologico(i, grafo, visitado, orden);
         }
     }
 
-    vector<int> result;
-    while (!Stack.empty()) {
-        result.push_back(Stack.top());
-        Stack.pop();
+    vector<int> resultado;
+    while (!orden.empty()) {
+        resultado.push_back(orden.top());
+        orden.pop();
     }
-
-    return result;
+    return resultado;
 }
 
 int main() {
-    vector<vector<int>> graph = {
+    vector<vector<int>> grafo = {
         {1, 2},
-        {2, 3},
+        {3},
         {3},
         {}
     };
 
-    vector<int> order = topologicalSort(graph);
-    cout << "Ordenación topológica: ";
-    for (int node : order) cout << node << " ";
+    int n = grafo.size();
+    vector<int> orden = ordenTopologico(grafo, n);
+
+    cout << "Orden topológico: ";
+    for (int nodo : orden) {
+        cout << nodo << " ";
+    }
     cout << endl;
 
     return 0;
