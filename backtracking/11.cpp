@@ -1,59 +1,65 @@
 #include <iostream>
 #include <vector>
-#include <set>
+#include <algorithm>
 using namespace std;
 
-void dfsArticulation(int u, int parent, vector<vector<int>>& graph, vector<int>& visited, vector<int>& disc, vector<int>& low, set<int>& articulationPoints, int& time) {
-    visited[u] = 1;
-    disc[u] = low[u] = ++time;
-    int children = 0;
+void dfsArticulacion(int nodo, int padre, vector<vector<int>>& grafo, vector<bool>& visitado,
+                     vector<int>& num, vector<int>& low, vector<bool>& articulacion, int& tiempo) {
+    visitado[nodo] = true;
+    num[nodo] = low[nodo] = ++tiempo;
+    int hijos = 0;
 
-    for (int v : graph[u]) {
-        if (!visited[v]) {
-            children++;
-            dfsArticulation(v, u, graph, visited, disc, low, articulationPoints, time);
+    for (int vecino : grafo[nodo]) {
+        if (!visitado[vecino]) {
+            hijos++;
+            dfsArticulacion(vecino, nodo, grafo, visitado, num, low, articulacion, tiempo);
+            low[nodo] = min(low[nodo], low[vecino]);
 
-            low[u] = min(low[u], low[v]);
-
-            if (parent == -1 && children > 1) {
-                articulationPoints.insert(u);
+            if (padre == -1 && hijos > 1) {
+                articulacion[nodo] = true;
             }
-            if (parent != -1 && low[v] >= disc[u]) {
-                articulationPoints.insert(u);
+            if (padre != -1 && low[vecino] >= num[nodo]) {
+                articulacion[nodo] = true;
             }
-        } else if (v != parent) {
-            low[u] = min(low[u], disc[v]);
+        } else if (vecino != padre) {
+            low[nodo] = min(low[nodo], num[vecino]);
         }
     }
 }
 
-set<int> findArticulationPoints(vector<vector<int>>& graph) {
-    int n = graph.size();
-    vector<int> visited(n, 0), disc(n, 0), low(n, 0);
-    set<int> articulationPoints;
-    int time = 0;
+vector<bool> encontrarArticulaciones(vector<vector<int>>& grafo, int n) {
+    vector<bool> visitado(n, false), articulacion(n, false);
+    vector<int> num(n, -1), low(n, -1);
+    int tiempo = 0;
 
-    for (int i = 0; i < n; i++) {
-        if (!visited[i]) {
-            dfsArticulation(i, -1, graph, visited, disc, low, articulationPoints, time);
+    for (int i = 0; i < n; ++i) {
+        if (!visitado[i]) {
+            dfsArticulacion(i, -1, grafo, visitado, num, low, articulacion, tiempo);
         }
     }
 
-    return articulationPoints;
+    return articulacion;
 }
 
 int main() {
-    vector<vector<int>> graph = {
+    vector<vector<int>> grafo = {
         {1, 2},
         {0, 2},
-        {0, 1, 3, 4},
-        {2, 4},
-        {2, 3}
+        {0, 1, 3},
+        {2, 4, 5},
+        {3, 5},
+        {3, 4}
     };
 
-    set<int> points = findArticulationPoints(graph);
+    int n = grafo.size();
+    vector<bool> articulaciones = encontrarArticulaciones(grafo, n);
+
     cout << "Puntos de articulación: ";
-    for (int point : points) cout << point << " ";
+    for (int i = 0; i < n; ++i) {
+        if (articulaciones[i]) {
+            cout << i << " ";
+        }
+    }
     cout << endl;
 
     return 0;
