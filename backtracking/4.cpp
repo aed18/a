@@ -1,75 +1,92 @@
 #include <iostream>
 #include <vector>
+#include <queue>
 #include <climits>
 using namespace std;
 
-struct Node {
-    int level, cost, bound;
-    vector<int> path;
+struct Nodo {
+    int nivel, costo, bound, ciudadActual;
+    vector<int> camino;
 };
 
-int calculateBound(vector<vector<int>>& distances, vector<int>& path, int level) {
-    int bound = 0;
-    vector<bool> visited(distances.size(), false);
+int calcularBound(Nodo& nodo, const vector<vector<int>>& distancias, int n) {
+    int bound = nodo.costo;
+    vector<bool> visitados(n, false);
 
-    for (int i = 0; i < level; i++) {
-        visited[path[i]] = true;
+    // Marcar las ciudades ya visitadas en el camino actual
+    for (int ciudad : nodo.camino) {
+        visitados[ciudad] = true;
     }
 
-    for (int i = 0; i < distances.size(); i++) {
-        if (!visited[i]) {
-            int minDist = INT_MAX;
-            for (int j = 0; j < distances.size(); j++) {
-                if (!visited[j] && i != j) {
-                    minDist = min(minDist, distances[i][j]);
+    // Sumar costos mínimos de las ciudades no visitadas
+    for (int i = 0; i < n; ++i) {
+        if (!visitados[i]) {
+            int minCosto = INT_MAX;
+            for (int j = 0; j < n; ++j) {
+                if (i != j && !visitados[j] && distancias[i][j] != 0) {
+                    minCosto = min(minCosto, distancias[i][j]);
                 }
             }
-            bound += minDist;
+            bound += minCosto;
         }
     }
     return bound;
 }
 
-void tspBranchBound(vector<vector<int>>& distances, int& minCost, vector<int>& bestPath) {
-    int n = distances.size();
-    Node root;
-    root.level = 0;
-    root.cost = 0;
-    root.path = {0};
-    root.bound = calculateBound(distances, root.path, root.level);
+int branchAndBoundTSP(const vector<vector<int>>& distancias) {
+    int n = distancias.size();
+    priority_queue<pair<int, Nodo>, vector<pair<int, Nodo>>, greater<>> pq;
 
-    vector<Node> queue = {root};
+    Nodo raiz = {0, 0, 0, 0, {0}};
+    raiz.bound = calcularBound(raiz, distancias, n);
+    pq.push({raiz.bound, raiz});
 
-    while (!queue.empty()) {
-        Node u = queue.back();
-        queue.pop_back();
+    int minCosto = INT_MAX;
+    vector<int> mejorCamino;
 
-        if (u.level == n - 1) {
-            int finalCost = u.cost + distances[u.path.back()][0];
-            if (finalCost < minCost) {
-                minCost = finalCost;
-                bestPath = u.path;
-                bestPath.push_back(0);
+    while (!pq.empty()) {
+        Nodo nodo = pq.top().second;
+        pq.pop();
+
+        if (nodo.bound >= minCosto) continue;
+
+        if (nodo.nivel == n - 1) {
+            int costoFinal = nodo.costo + distancias[nodo.ciudadActual][0];
+            if (costoFinal < minCosto) {
+                minCosto = costoFinal;
+                mejorCamino = nodo.camino;
             }
-        } else {
-            for (int i = 1; i < n; i++) {
-                if (find(u.path.begin(), u.path.end(), i) == u.path.end()) {
-                    Node v = u;
-                    v.level = u.level + 1;
-                    v.path.push_back(i);
-                    v.cost += distances[u.path.back()][i];
-                    v.bound = v.cost + calculateBound(distances, v.path, v.level);
-                    if (v.bound < minCost) {
-                        queue.push_back(v);
-                    }
+            continue;
+        }
+
+        for (int i = 0; i < n; ++i) {
+            if (find(nodo.camino.begin(), nodo.camino.end(), i) == nodo.camino.end()) {
+                Nodo hijo = nodo;
+                hijo.nivel++;
+                hijo.camino.push_back(i);
+                hijo.costo += distancias[nodo.ciudadActual][i];
+                hijo.ciudadActual = i;
+                hijo.bound = calcularBound(hijo, distancias, n);
+
+                if (hijo.bound < minCosto) {
+                    pq.push({hijo.bound, hijo});
                 }
             }
         }
     }
+
+    cout << "Costo mínimo: " << minCosto << endl;
+    cout << "Camino óptimo: ";
+    for (int ciudad : mejorCamino) {
+        cout << ciudad + 1 << " -> ";
+    }
+    cout << "1" << endl; // Volvemos a la ciudad inicial
+
+    return minCosto;
 }
 
 int main() {
-    vector<vector<int>> distances = {
+    vector<vector<int>> distancias = {
         {0, 3, 10, 11, 7},
         {3, 0, 8, 12, 9},
         {10, 8, 0, 9, 4},
@@ -77,15 +94,6 @@ int main() {
         {7, 9, 4, 5, 0}
     };
 
-    int minCost = INT_MAX;
-    vector<int> bestPath;
-
-    tspBranchBound(distances, minCost, bestPath);
-
-    cout << "Costo mínimo: " << minCost << endl;
-    cout << "Ruta óptima: ";
-    for (int city : bestPath) cout << city << " ";
-    cout << endl;
-
+    branchAndBoundTSP(distancias);
     return 0;
 }
