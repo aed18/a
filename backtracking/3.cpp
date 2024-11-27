@@ -1,66 +1,61 @@
 #include <iostream>
 #include <vector>
-#include <queue>
 #include <climits>
 using namespace std;
 
-struct Node {
-    vector<int> assigned;  // Asignación actual
-    int cost, level;       // Costo acumulado y nivel actual
-    vector<bool> available; // Disponibilidad de tareas
-};
+// Matriz de beneficios
+const int INF = INT_MAX;
 
-int calculateCost(vector<vector<int>>& costMatrix, vector<int>& assigned) {
-    int totalCost = 0;
-    for (int i = 0; i < assigned.size(); ++i) {
-        totalCost += costMatrix[i][assigned[i]];
-    }
-    return totalCost;
-}
-
-int assignmentProblem(vector<vector<int>>& costMatrix) {
-    int n = costMatrix.size();
-    queue<Node> Q;
-
-    Node root;
-    root.level = 0;
-    root.cost = 0;
-    root.assigned = vector<int>(n, -1);
-    root.available = vector<bool>(n, true);
-    Q.push(root);
-
-    int minCost = INT_MAX;
-
-    while (!Q.empty()) {
-        Node u = Q.front(); Q.pop();
-
-        if (u.level == n) {
-            minCost = min(minCost, u.cost);
-            continue;
+// Función para realizar la asignación utilizando backtracking
+void asignarTareas(int nivel, int beneficioActual, vector<int>& asignados, vector<int>& solucionActual,
+                   vector<int>& mejorSolucion, int& maxBeneficio, const vector<vector<int>>& beneficios) {
+    int n = beneficios.size();
+    
+    // Si se ha completado una solución
+    if (nivel == n) {
+        if (beneficioActual > maxBeneficio) {
+            maxBeneficio = beneficioActual;
+            mejorSolucion = solucionActual;
         }
+        return;
+    }
 
-        for (int i = 0; i < n; ++i) {
-            if (u.available[i]) {
-                Node v = u;
-                v.level = u.level + 1;
-                v.assigned[u.level] = i;
-                v.available[i] = false;
-                v.cost = calculateCost(costMatrix, v.assigned);
-                if (v.cost < minCost) Q.push(v);
-            }
+    // Explorar todas las tareas no asignadas
+    for (int tarea = 0; tarea < n; ++tarea) {
+        if (asignados[tarea] == 0) { // Si la tarea no está asignada
+            asignados[tarea] = 1;
+            solucionActual[nivel] = tarea;
+            asignarTareas(nivel + 1, beneficioActual + beneficios[nivel][tarea], asignados, 
+                          solucionActual, mejorSolucion, maxBeneficio, beneficios);
+            asignados[tarea] = 0; // Backtrack
         }
     }
-    return minCost;
 }
 
 int main() {
-    vector<vector<int>> costMatrix = {
+    // Matriz de beneficios
+    vector<vector<int>> beneficios = {
         {94, 1, 54, 68},
         {74, 10, 88, 82},
         {62, 88, 8, 76},
         {11, 74, 81, 21}
     };
 
-    cout << "Costo mínimo de asignación: " << assignmentProblem(costMatrix) << endl;
+    int n = beneficios.size();
+    vector<int> asignados(n, 0); // Para rastrear tareas asignadas
+    vector<int> solucionActual(n, -1); // Solución parcial
+    vector<int> mejorSolucion(n, -1); // Mejor solución encontrada
+    int maxBeneficio = INT_MIN;
+
+    // Resolver utilizando backtracking
+    asignarTareas(0, 0, asignados, solucionActual, mejorSolucion, maxBeneficio, beneficios);
+
+    // Salida de resultados
+    cout << "Máximo beneficio: " << maxBeneficio << endl;
+    cout << "Asignación óptima:" << endl;
+    for (int i = 0; i < n; ++i) {
+        cout << "Persona " << i + 1 << " -> Tarea " << mejorSolucion[i] + 1 << endl;
+    }
+
     return 0;
 }
