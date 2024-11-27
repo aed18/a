@@ -3,42 +3,43 @@
 #include <queue>
 using namespace std;
 
-int countShortestPaths(vector<vector<int>>& graph, int start, int end) {
-    int n = graph.size();
-    vector<int> distance(n, -1), count(n, 0);
-    queue<int> q;
+int contarCaminosMinimos(vector<vector<int>>& grafo, int inicio, int fin, int n) {
+    vector<int> distancias(n, INT_MAX);
+    vector<int> caminos(n, 0);
 
-    distance[start] = 0;
-    count[start] = 1;
-    q.push(start);
+    queue<int> q;
+    q.push(inicio);
+    distancias[inicio] = 0;
+    caminos[inicio] = 1;
 
     while (!q.empty()) {
-        int node = q.front(); q.pop();
+        int nodo = q.front();
+        q.pop();
 
-        for (int neighbor : graph[node]) {
-            if (distance[neighbor] == -1) { // No visitado
-                distance[neighbor] = distance[node] + 1;
-                count[neighbor] = count[node];
-                q.push(neighbor);
-            } else if (distance[neighbor] == distance[node] + 1) { // Mismo nivel
-                count[neighbor] += count[node];
+        for (int vecino : grafo[nodo]) {
+            if (distancias[vecino] > distancias[nodo] + 1) {
+                distancias[vecino] = distancias[nodo] + 1;
+                caminos[vecino] = caminos[nodo];
+                q.push(vecino);
+            } else if (distancias[vecino] == distancias[nodo] + 1) {
+                caminos[vecino] += caminos[nodo];
             }
         }
     }
 
-    return count[end];
+    return caminos[fin];
 }
 
 int main() {
-    vector<vector<int>> graph = {
+    vector<vector<int>> grafo = {
         {1, 2},
-        {0, 3},
-        {0, 3},
-        {1, 2, 4},
-        {3}
+        {3},
+        {3},
+        {}
     };
 
-    int start = 0, end = 4;
-    cout << "Número de caminos mínimos: " << countShortestPaths(graph, start, end) << endl;
+    int inicio = 0, fin = 3, n = grafo.size();
+    cout << "Número de caminos mínimos: " << contarCaminosMinimos(grafo, inicio, fin, n) << endl;
+
     return 0;
 }
