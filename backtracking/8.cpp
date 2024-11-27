@@ -2,28 +2,28 @@
 #include <vector>
 using namespace std;
 
-bool hasCycleDFS(int node, vector<vector<int>>& graph, vector<bool>& visited, vector<bool>& recStack) {
-    visited[node] = true;
-    recStack[node] = true;
+bool dfsCiclo(int nodo, vector<vector<int>>& grafo, vector<bool>& visitado, vector<bool>& enRecursion) {
+    visitado[nodo] = true;
+    enRecursion[nodo] = true;
 
-    for (int neighbor : graph[node]) {
-        if (!visited[neighbor] && hasCycleDFS(neighbor, graph, visited, recStack)) {
+    for (int vecino : grafo[nodo]) {
+        if (!visitado[vecino] && dfsCiclo(vecino, grafo, visitado, enRecursion)) {
             return true;
-        } else if (recStack[neighbor]) {
+        } else if (enRecursion[vecino]) {
             return true;
         }
     }
 
-    recStack[node] = false;
+    enRecursion[nodo] = false;
     return false;
 }
 
-bool hasCycle(vector<vector<int>>& graph) {
-    int n = graph.size();
-    vector<bool> visited(n, false), recStack(n, false);
+bool tieneCiclos(vector<vector<int>>& grafo, int n) {
+    vector<bool> visitado(n, false);
+    vector<bool> enRecursion(n, false);
 
-    for (int i = 0; i < n; i++) {
-        if (!visited[i] && hasCycleDFS(i, graph, visited, recStack)) {
+    for (int i = 0; i < n; ++i) {
+        if (!visitado[i] && dfsCiclo(i, grafo, visitado, enRecursion)) {
             return true;
         }
     }
@@ -31,13 +31,18 @@ bool hasCycle(vector<vector<int>>& graph) {
 }
 
 int main() {
-    vector<vector<int>> graph = {
-        {1},
-        {2},
-        {0, 3},
+    vector<vector<int>> grafo = {
+        {1},        // Nodo 0 -> Nodo 1
+        {2},        // Nodo 1 -> Nodo 2
+        {0},        // Nodo 2 -> Nodo 0 (ciclo)
         {}
     };
 
-    cout << "¿El grafo tiene ciclos?: " << (hasCycle(graph) ? "Sí" : "No") << endl;
+    int n = grafo.size();
+    if (tieneCiclos(grafo, n)) {
+        cout << "El grafo tiene ciclos." << endl;
+    } else {
+        cout << "El grafo no tiene ciclos." << endl;
+    }
     return 0;
 }
